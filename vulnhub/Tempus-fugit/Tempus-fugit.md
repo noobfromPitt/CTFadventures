@@ -24,7 +24,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 ```
 # Enumeration
 From nmap data, we can see that there is a nginx web server hosted on port 80 and we can connect to it using http. The site looks pretty simple. It has a main page and upload page. There is nothing interesting from the page source, except that it looks like a template. The stuff section of the page has many cards which pop up modals. Nothing interesting here
-![clicking the cards pop up these modals](https://drive.google.com/open?id=16nODx1y_MSNIkuzhSAXbKizBoofIGqoW)
+![clicking the cards pop up these modals](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/stuff.png)
 The about section mentions something about an ftp server where scripts can be uploaded. This might be out point of injection.
 ![about section of the page](https://drive.google.com/open?id=1GAauKYFXvGzMaPG6wBDIAiECzKeOxdOX)
 Next, the page has a contact us with multiple forms for name, mail, etc. But whatever the input is, the site responds with an error saying the mail server is not responding
