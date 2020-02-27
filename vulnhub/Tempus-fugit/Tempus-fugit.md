@@ -96,19 +96,19 @@ Since there are some files we found with `ls` command, lets examine the files.
 ![enter image description here](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/pyhistory.png)
 
 * the arp table from linenum shows few ips
-* 
+ 
 ![enter image description here](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/arp.png)
 
 * The FTP port should be open on one of these ips. We can check this using `nc -zv 172.19.0.100 21` command
-* 
+ 
 ![nc](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/nc-zv.png)
 
 * since 172.19.0.12 has port 21 open, we can connect it using ftp. From the conf files linenum found, there are lftp files. So, server might be using lftp to connect to the FTP server. Using the credentials from main.py, I was able to login. Apart from all the files I earlier uploaded while getting reverse shell, there is a *cmscreds.txt* file which has some credentials
-* 
+ 
 ![cmscreds](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/cmscreds.png)
 
 * linenum also shows *resolv.conf* which has interesting 
-* 
+ 
 ![resolv](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/resolv.png)
 
-I spent a lot of time after this point but didn't find any leads. So, i looked up other walkthroughs where people used `add apk nmap` to install nmap and scan the ips for open ports.
+dns resolution of mofo.pwn might reveal more details. I am stuck at this point as there is no `dig` installed in the docker and `apk add bind-utils` is not working. So, this is still a work in progress
